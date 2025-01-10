@@ -24,39 +24,65 @@ class ElementInspector {
   }
 
   generateCypressSelector(element) {
-    // Priority order for Cypress selectors
+    // Priority 1: Use the ID
     if (element.id) {
       return `cy.get('#${element.id}')`;
     }
-
-    if (element.getAttribute('data-cy')) {
-      return `cy.get('[data-cy="${element.getAttribute('data-cy')}"]')`;
+  
+    // Priority 2: Use data attributes
+    const dataAttributes = ['data-cy', 'data-test', 'data-testid'];
+    for (const attr of dataAttributes) {
+      if (element.getAttribute(attr)) {
+        return `cy.get('[${attr}="${element.getAttribute(attr)}"]')`;
+      }
     }
-
-    if (element.getAttribute('data-test')) {
-      return `cy.get('[data-test="${element.getAttribute('data-test')}"]')`;
-    }
-
+  
+    // Priority 3: Use the name attribute (for form elements)
     if (element.name) {
       return `cy.get('[name="${element.name}"]')`;
     }
-
-    // For buttons and links with text
-    if (element.tagName.toLowerCase() === 'button' || element.tagName.toLowerCase() === 'a') {
-      const text = element.textContent.trim();
-      if (text) {
-        return `cy.contains('${element.tagName.toLowerCase()}', '${text}')`;
-      }
+  
+    // Priority 4: Use the tag and visible text (for buttons and links)
+    const tag = element.tagName.toLowerCase();
+    const text = element.textContent.trim();
+    if ((tag === 'button' || tag === 'a') && text) {
+      return `cy.contains('${tag}', '${text}')`;
     }
-
-    // Class-based selector (only if the element has a single class)
+  
+    // Priority 5: Use a single class if available
     const classList = element.className.split(/\s+/).filter(c => c);
     if (classList.length === 1) {
       return `cy.get('.${classList[0]}')`;
     }
-
-    // Generate a unique selector using closest parent with ID or fall back to nth-child
-    return this.generateUniqueSelector(element);
+  
+    // Priority 6: Generate a unique selector using parent context
+    return this.generateContextualSelector(element);
+  }
+  
+  generateContextualSelector(element) {
+    let selector = '';
+    let current = element;
+  
+    while (current && current !== document.body) {
+      const tag = current.tagName.toLowerCase();
+  
+      // Use ID if available in the hierarchy
+      if (current.id) {
+        selector = `#${current.id}${selector ? ' > ' + selector : ''}`;
+        break;
+      }
+  
+      const parent = current.parentElement;
+      if (parent) {
+        const siblings = Array.from(parent.children);
+        const index = siblings.indexOf(current) + 1;
+        selector = `${tag}:nth-child(${index})${selector ? ' > ' + selector : ''}`;
+      }
+  
+      current = parent;
+    }
+  
+    return `cy.get('${selector}')`;
   }
 
   generateUniqueSelector(element) {
