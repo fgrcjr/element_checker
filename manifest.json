@@ -2,16 +2,35 @@
   "manifest_version": 3,
   "name": "Element Inspector",
   "version": "1.0",
-  "description": "Inspect elements and get testing selectors",
-  "permissions": ["activeTab"],
-  "action": {
-    "default_title": "Element Inspector"
+  "permissions": ["activeTab", "clipboardWrite", "scripting"],
+  "commands": {
+    "copy-cypress": {
+      "description": "Copy Cypress Selector",
+      "suggested_key": {
+        "default": "Alt+Shift+1"
+      }
+    },
+    "copy-playwright": {
+      "description": "Copy Playwright Selector",
+      "suggested_key": {
+        "default": "Alt+Shift+2"
+      }
+    },
+    "copy-selenium": {
+      "description": "Copy Selenium Selector",
+      "suggested_key": {
+        "default": "Alt+Shift+3"
+      }
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "css": ["styles.css"]
+      "run_at": "document_end"
     }
   ]
 }
